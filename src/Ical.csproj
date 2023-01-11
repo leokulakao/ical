@@ -8,6 +8,10 @@
 
   <ItemGroup>
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
+    <PackageReference Include="Ical.Net" Version="4.2.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Remove="Ical.Net" />
+  </ItemGroup>
 </Project>

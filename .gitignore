@@ -204,6 +204,7 @@ ClientBin/
 *.pfx
 *.publishsettings
 node_modules/
+/client/node_modules/
 orleans.codegen.cs
 
 # Since there are multiple workflows, uncomment next line to ignore bower_components
@@ -297,6 +298,6 @@ client/src/assets/i18n/en.json
 .certs/
 
 # Angular cache
-/**/.angular/cache/
+/client/.angular/cache/
 
 **.DS_Store
