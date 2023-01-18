@@ -13,5 +13,9 @@
 
   <ItemGroup>
     <None Remove="Ical.Net" />
+    <None Remove="Models\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Models\" />
   </ItemGroup>
 </Project>

@@ -1,4 +1,7 @@
-﻿using System.Text;
+﻿using System.Net.Mime;
+using System.Text;
+using System.Text.Json;
+using Ical.Models;
 using Ical.Net;
 using Ical.Net.CalendarComponents;
 using Ical.Net.DataTypes;
@@ -11,10 +14,7 @@ namespace Ical.Controllers;
 [Route("api/calendar.ics")]
 public class CalendarController : ControllerBase
 {
-    private static readonly IEnumerable<CalendarEvent> events = new CalendarEvent[1]
-    {
-        new CalendarEvent { Start = new CalDateTime(new DateTime(2023, 11, 1, 15, 0, 0)) }
-    }.AsEnumerable();
+    private static readonly List<ICalendar> eventsDB = new List<ICalendar>();
 
     private readonly ILogger<CalendarController> _logger;
 
@@ -27,7 +27,16 @@ public class CalendarController : ControllerBase
     public IActionResult Get()
     {
         var calendar = new Calendar();
-        events.ToList().ForEach(x => calendar.Events.Add(x));
+        eventsDB.ForEach(x => calendar.Events.Add(
+            new CalendarEvent
+            {
+                Summary = x.Summary,
+                Description = x?.Description,
+                Start = new CalDateTime(x.DateStart),
+                End = new CalDateTime(x.DateEnd),
+                Location = x?.Location
+            }
+            ));
 
         var serializer = new CalendarSerializer();
         var serializedCalendar = serializer.SerializeToString(calendar);
@@ -36,6 +45,30 @@ public class CalendarController : ControllerBase
         var bytes = Encoding.UTF8.GetBytes(serializedCalendar);
 
         return File(bytes, contentType, "calendar.ics");
+    }
+
+    [HttpPost]
+    [Route("/api/add-calendar")]
+    public IActionResult AddCalendar([FromBody] ICalendar calendar)
+    {
+        eventsDB.Add(calendar);
+
+        return Content(JsonSerializer.Serialize(eventsDB), MediaTypeNames.Application.Json, Encoding.UTF8);
+    }
+
+    [HttpPost]
+    [Route("/api/edit-calendar/{id}")]
+    public IActionResult EditCalendar(Guid id, [FromBody] ICalendar calendar)
+    {
+        ICalendar calendarForEdit = eventsDB.First(x => x.Id == id);
+
+        calendarForEdit.Summary = calendar.Summary;
+        calendarForEdit.Description = calendar.Description;
+        calendarForEdit.DateStart = calendar.DateStart;
+        calendarForEdit.DateEnd = calendar.DateEnd;
+        calendarForEdit.Location = calendar.Location;
+
+        return Content(JsonSerializer.Serialize(calendarForEdit), MediaTypeNames.Application.Json, Encoding.UTF8);
     }
 }
 

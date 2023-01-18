@@ -1,0 +1,55 @@
+version: '3'
+services:
+
+    traefik:
+      image: "traefik:v2.5"
+      container_name: "traefik"
+      networks:
+        - ical-network
+      ports:
+        - "80:80"
+        - "443:443"
+        # (Optional) Expose Dashboard
+        - "8080:8080"  # Don't do this in production!
+      volumes:
+        - ./traefik/:/etc/traefik/
+        - traefik-ssl-certs:/ssl-certs
+        - /var/run/docker.sock:/var/run/docker.sock:ro
+
+    nginx:
+      image: nginx
+      labels:
+        - 'traefik.enable=true'
+        - 'traefik.http.services.nginx.loadbalancer.server.port=80'
+        - 'traefik.docker.network=ical-network'
+        - 'traefik.http.routers.nginx.entrypoints=websecure'
+        - 'traefik.http.routers.nginx.rule=Host("ec2-18-204-6-174.compute-1.amazonaws.com")'
+        - 'traefik.http.routers.nginx.tls=true'
+        - 'traefik.http.routers.nginx.tls.certresolver=production'
+        - 'traefik.http.routers.nginx.service=nginx'
+      networks:
+        - ical-network
+
+    api:
+      image: leokulakao/ical:prod
+      labels:
+        - 'traefik.enable=true'
+        - 'traefik.http.services.nginx.loadbalancer.server.port=4100'
+        - 'traefik.docker.network=ical-network'
+        - 'traefik.http.routers.ical-api.entrypoints=websecure'
+        - 'traefik.http.routers.ical-api.rule=Host("ec2-18-204-6-174.compute-1.amazonaws.com") && PathPrefix("/api")'
+        - 'traefik.http.routers.ical-api.tls=true'
+        - 'traefik.http.routers.ical-api.tls.certresolver=production'
+        # - 'traefik.http.routers.ical-api.service=ical-api'
+      networks:
+        - ical-network
+      restart: 'always'
+
+volumes:
+  traefik-ssl-certs:
+    driver: local
+
+networks:
+  ical-network:
+    driver: bridge
+
